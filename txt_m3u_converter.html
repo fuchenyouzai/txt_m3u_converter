@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>悠哉 TXT ⇄ M3U 转换器 悠哉TG https://t.me/fuchenyouzaibot</title>
+<style>
+  :root{--bg:#071025;--card:#07172a;--accent:#06b6d4;--text:#e6eef6}
+  body{font-family:system-ui,Segoe UI,Arial;margin:0;min-height:100vh;background:linear-gradient(180deg,#001121,#071025);color:var(--text);display:flex;align-items:center;justify-content:center;padding:20px}
+  .wrap{max-width:1100px;width:100%;background:rgba(255,255,255,0.02);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+  h1{margin:0 0 6px;font-size:20px;color:var(--accent)}
+  p.desc{margin:0 0 14px;color:#9fb6c6}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  textarea{width:100%;height:360px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:var(--text);resize:vertical;box-sizing:border-box;font-family:monospace}
+  input[type=text]{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01);color:var(--text)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  button{background:var(--accent);color:#042029;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+  button.secondary{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.06)}
+  label.small{font-size:13px;color:#9fb6c6;display:flex;gap:8px;align-items:center}
+  .footer{margin-top:12px;color:#8fa9bb;font-size:13px}
+  .dropzone{border:2px dashed rgba(255,255,255,0.04);padding:10px;border-radius:8px;text-align:center;color:#9fb6c6}
+  .row{display:flex;gap:8px;align-items:center}
+  .header-area{margin-bottom:8px}
+  @media (max-width:980px){.cols{grid-template-columns:1fr}}
+  .note{font-size:13px;color:#9fb6c6;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>悠哉 TXT ⇄ M3U 转换器 悠哉TG https://t.me/fuchenyouzaibot </h1>
+  <p class="desc">TXT 每行格式：<code>直播名字,直播链接</code> → 转 M3U；或将 M3U 粘贴到左侧，转换回 TXT（输出 <code>名字,链接</code>）。</p>
+
+  <div class="cols">
+    <!-- 左侧：输入 -->
+    <div>
+      <div class="header-area">
+        <div class="note">M3U 头部模板（可编辑）：</div>
+        <textarea id="m3uHeader" style="height:80px;">
+#EXTM3U x-tvg-url="https://gh-proxy.com/https://raw.githubusercontent.com/你的用户名/你的仓库名/refs/heads/main/你的文件名.xml" catchup="append" catchup-source="&playbackbegin=${(b)yyyyMMddHHmmss}&playbackend=${(e)yyyyMMddHHmmss}"
+        </textarea>
+      </div>
+
+      <div class="hint">输入/粘贴 TXT 或 M3U 内容（也可拖入文件）：</div>
+      <div class="dropzone" id="drop" ondragover="onDragOver(event)" ondrop="onDrop(event)">
+        将文件拖放到此处，或直接粘贴/编辑下面文本框
+      </div>
+      <textarea id="inputArea" placeholder="每行一个：直播名字,直播链接 或直接粘贴 m3u 内容..."></textarea>
+
+      <div class="controls" style="margin-top:10px">
+        <button onclick="txtToM3u()">TXT → M3U</button>
+        <button onclick="m3uToTxt()">M3U → TXT</button>
+        <button class="secondary" onclick="clearAll()">清空</button>
+        <input type="file" id="fileInput" style="display:none" onchange="handleFile(event)">
+        <button class="secondary" onclick="document.getElementById('fileInput').click()">上传文件</button>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="small"><input type="checkbox" id="addExtinf" checked> 生成 #EXTINF（包含 tvg-id / tvg-name）</label>
+        <label class="small" style="margin-left:8px"><input type="checkbox" id="useDefaultLogo"> 使用默认 tvg-logo（如需请在下方填 URL）</label>
+      </div>
+      <div style="margin-top:8px">
+        <input id="defaultLogo" type="text" placeholder="默认图片 URL（可留空）">
+      </div>
+    </div>
+
+    <!-- 右侧：输出 -->
+    <div>
+      <div class="hint">转换结果（可编辑 / 下载 / 复制）：</div>
+      <textarea id="outputArea" placeholder="转换结果显示在这里..."></textarea>
+
+      <div class="controls" style="margin-top:10px">
+        <button onclick="downloadOutput()">下载结果</button>
+        <button class="secondary" onclick="copyOutput()">复制到剪贴板</button>
+        <button class="secondary" onclick="previewAsPlaylist()">在新标签预览（文本）</button>
+      </div>
+
+      <div class="footer">
+        使用说明：<br>
+        - TXT 必须以逗号分隔：<code>名字,链接</code>（名字内可含空格）。<br>
+        - 从 M3U 转 TXT，会优先用 <code>tvg-name</code> 或 <code>#EXTINF</code> 后的显示名作为名字。<br>
+        - 悠哉⁄(⁄⁄•⁄ω⁄•⁄⁄)⁄  TG   @fuchenyouzaibot <br>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- 配置：下载文件名前缀 & 日期工具 ---------- */
+const DOWNLOAD_PREFIX = 'TG@fuchenyouzaibot';
+function getDateISO(){ // YYYY-MM-DD
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function getDateCompact(){ // YYYYMMDD
+  return getDateISO().replace(/-/g,'');
+}
+
+/* ---------- 文件读/拖放 ---------- */
+function onDragOver(e){ e.preventDefault(); }
+function onDrop(e){ e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) readFileToInput(f); }
+function handleFile(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  readFileToInput(f);
+}
+function readFileToInput(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    document.getElementById('inputArea').value = reader.result;
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- 解析辅助 ---------- */
+function parseTxtLines(raw){
+  // 每行：名字,链接 （逗号分隔，名字允许有逗号但我们以第一个逗号为分隔）
+  return raw.replace(/\r/g,'').split('\n').map(l=>l.trim()).filter(l=>l!=='').map(line=>{
+    const idx = line.indexOf(',');
+    if(idx === -1) return {title: line, url: ''};
+    const title = line.slice(0, idx).trim();
+    const url = line.slice(idx+1).trim();
+    return {title, url};
+  });
+}
+
+function extractAttrFromExtinf(extinfLine, attrName){
+  // 匹配属性，例如 tvg-name="xxx"
+  const re = new RegExp(attrName + '\\s*=\\s*"(.*?)"', 'i');
+  const m = extinfLine.match(re);
+  return m ? m[1] : null;
+}
+
+/* ---------- TXT -> M3U ---------- */
+function txtToM3u(){
+  const raw = document.getElementById('inputArea').value.trim();
+  if(!raw){ alert('输入为空'); return; }
+  const headerTemplate = document.getElementById('m3uHeader').value.trim();
+  const lines = parseTxtLines(raw);
+  let out = '';
+  // 如果 header 包含 #EXTM3U，则直接用；否则加上默认 #EXTM3U
+  if(headerTemplate && headerTemplate.includes('#EXTM3U')){
+    out += headerTemplate.replace(/\r/g,'').trim() + '\n';
+  } else {
+    out += '#EXTM3U\n';
+  }
+
+  // 在头部加入 Generated 注释（包含日期）
+  out += `# Generated by ${DOWNLOAD_PREFIX} on ${getDateISO()}\n`;
+
+  const useExtinf = document.getElementById('addExtinf').checked;
+  const useDefaultLogo = document.getElementById('useDefaultLogo').checked;
+  const defaultLogo = document.getElementById('defaultLogo').value.trim();
+
+  for(const item of lines){
+    const title = item.title || '';
+    const url = item.url || '';
+    if(!url) continue;
+    let extinf = '';
+    if(useExtinf){
+      // 构造属性：tvg-id / tvg-name / tvg-logo / group-title（group 固定为 咪视界v4，除非你想改）
+      const attrs = [];
+      attrs.push(`tvg-id="${escapeAttr(title)}"`);
+      attrs.push(`tvg-name="${escapeAttr(title)}"`);
+      if(useDefaultLogo && defaultLogo){
+        attrs.push(`tvg-logo="${escapeAttr(defaultLogo)}"`);
+      } else {
+        // 如果 header 中有某个默认 logo，用户没填写则不加
+      }
+      attrs.push(`group-title="咪视界v4"`);
+      extinf = `#EXTINF:-1 ${attrs.join(' ')},${title}`;
+      out += extinf + '\n';
+    }
+    out += url + '\n';
+  }
+
+  document.getElementById('outputArea').value = out;
+}
+
+/* ---------- M3U -> TXT ---------- */
+function m3uToTxt(){
+  const raw = document.getElementById('inputArea').value.replace(/\r/g,'').trim();
+  if(!raw){ alert('输入为空'); return; }
+  const lines = raw.split('\n').map(l=>l.trim());
+  const outLines = [];
+  let lastExtTitle = null;
+
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+    if(!line) continue;
+    if(line.startsWith('#EXTINF')){
+      // 尝试提取 tvg-name 或后面的显示名
+      const tvgName = extractAttrFromExtinf(line, 'tvg-name');
+      const tvgId = extractAttrFromExtinf(line, 'tvg-id');
+      let name = tvgName || tvgId || null;
+      // 如果没有属性，则尝试用逗号后面的显示名
+      const m = line.match(/#EXTINF:[^,]*,(.*)$/i);
+      if(!name && m) name = m[1].trim();
+      lastExtTitle = name;
+      continue;
+    }
+    if(line.startsWith('#')) continue;
+    // 非注释行，通常是 URL
+    const url = line;
+    const name = lastExtTitle ? lastExtTitle : '';
+    if(name){
+      outLines.push(`${name},${url}`);
+    } else {
+      // 没有上一个标题，则仅输出 URL（或留空名字）
+      outLines.push(`,${url}`);
+    }
+    lastExtTitle = null;
+  }
+
+  document.getElementById('outputArea').value = outLines.join('\n');
+}
+
+/* ---------- 辅助：下载 / 复制 / 预览 ---------- */
+function downloadOutput(){
+  const txt = document.getElementById('outputArea').value;
+  if(!txt){ alert('无输出可下载'); return; }
+  const ext = txt.includes('#EXTM3U') ? 'm3u' : 'txt';
+  const filename = `${DOWNLOAD_PREFIX}_${getDateCompact()}.${ext}`;
+  const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function copyOutput(){
+  const txt = document.getElementById('outputArea').value;
+  if(!txt){ alert('无输出可复制'); return; }
+
+  // 优先使用 navigator.clipboard（需 https 或 localhost），失败则回退到 document.execCommand('copy')
+  try {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(txt);
+      alert('已复制到剪贴板（使用 navigator.clipboard）');
+      return;
+    }
+    throw new Error('navigator.clipboard 不可用');
+  } catch(e){
+    // 回退方法
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      // 保持不可见并加入页面
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if(ok) { alert('已复制到剪贴板（回退方法）'); }
+      else { prompt('自动复制失败，请手动复制下面的内容：', txt); }
+    } catch(err){
+      prompt('复制失败，请手动复制下面的内容：', txt);
+    }
+  }
+}
+
+function previewAsPlaylist(){
+  const content = document.getElementById('outputArea').value;
+  if(!content){ alert('先生成结果再预览'); return; }
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Playlist Preview</title>
+  <style>body{font-family:system-ui;padding:12px;background:#071025;color:#dbeefc}pre{white-space:pre-wrap;background:#021222;padding:10px;border-radius:8px}</style></head><body>
+  <h2>Playlist Preview</h2><pre>${escapeHtml(content)}</pre>
+  <p>若为 M3U，某些播放器/应用会直接识别。浏览器本身不解析 m3u 为播放列表（需播放器支持）。</p>
+  </body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
+/* ---------- 工具函数 ---------- */
+function escapeAttr(s){
+  return String(s).replace(/"/g,'&quot;');
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function clearAll(){
+  if(confirm('清空输入与输出？')){ document.getElementById('inputArea').value=''; document.getElementById('outputArea').value=''; }
+}
+
+/* 自动粘贴支持 */
+document.addEventListener('paste', (e) => {
+  const ta = document.getElementById('inputArea');
+  if(document.activeElement !== ta){
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if(text && text.trim()){
+      ta.value = text;
+      e.preventDefault();
+    }
+  }
+});
+</script>
+</body>
+</html>
